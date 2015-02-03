@@ -145,6 +145,15 @@ static void ticks_sequence_finished (unsigned long parameters)
 static irqreturn_t r_irq_handler(int irq, void *dev_id, struct pt_regs *regs) 
 {
 
+/*
+    #define RSTSREG     0x28
+    RSSIVal = (RSTSREG | 0x40);
+    wiringPiSPIDataRW(CS_CONFIG,(char *) &RSSIVal, 1);
+    RSSIVal = 0;
+    // sending 0, we receive the value in RSSIVal
+    wiringPiSPIDataRW(CS_CONFIG, (char *) &RSSIVal, 1);
+*/
+
    uint64_t curr_int_time = millis();
    // Debounce
    if (last_interrupt_time && curr_int_time - last_interrupt_time < DEBOUNCE_MILLI) 
