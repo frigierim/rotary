@@ -79,6 +79,9 @@ static uint64_t last_interrupt_time = 0;
 static struct timer_list ticks_timer;	/* Timer for the end of a digit     */ 
 static struct timer_list sequence_timer;/* Timer for the end of a sequence  */ 
 
+// Used as a condition to wake the ticks_wait_queue
+static int bufferReady = 0;
+
 static DECLARE_WAIT_QUEUE_HEAD(ticks_wait_queue); /* Used for blocking read */
 
 /****************************************************************************/
@@ -105,7 +108,8 @@ static void sequence_sequence_finished (unsigned long parameters)
     
     printk("Rotary driver: buffer=%s\n",ticks_output_buffer);
     ticks_output_buffer_len = 0;
-    
+   
+    bufferReady = 1;
     wake_up_interruptible (&ticks_wait_queue);
 
 }
@@ -228,7 +232,9 @@ void r_int_release(void) {
 static ssize_t device_read(struct file *filp, char __user *buffer, size_t length, loff_t *offset)
 {
     unsigned int len = 0;
-	interruptible_sleep_on (&ticks_wait_queue);
+	wait_event_interruptible(ticks_wait_queue, bufferReady);
+    bufferReady = 0;
+
     len = strlen(ticks_output_buffer);
     return (copy_to_user (buffer, ticks_output_buffer, len))
 		 ? -EFAULT : len;
